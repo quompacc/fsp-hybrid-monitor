@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS Painten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0e17;--bg2:#111827;--bg3:#1c2333;--border:#2a3448;--text:#e2e8f0;--muted:#64748b;--solar:#f59e0b;--grid:#3b82f6;--battery:#10b981;--load:#8b5cf6;--danger:#ef4444;--warn:#f97316;--accent:#06b6d4;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  header h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;}
+  header h1 span{color:var(--solar);}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--battery);display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .last-update{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);}
+  .energy-flow{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+  .flow-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:16px;}
+  .flow-grid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:8px;}
+  .flow-node{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+  .flow-node .icon{font-size:2rem;margin-bottom:6px;}
+  .flow-node .label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .flow-node .value{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;margin-top:4px;}
+  .flow-node .sub{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:2px;}
+  .flow-arrow{text-align:center;}
+  .arrow-line{height:2px;background:var(--border);border-radius:2px;transition:all 0.5s;}
+  .arrow-line.solar{background:var(--solar);box-shadow:0 0 8px var(--solar);}
+  .arrow-line.batt{background:var(--battery);box-shadow:0 0 8px var(--battery);}
+  .arrow-line.grid{background:var(--grid);box-shadow:0 0 8px var(--grid);}
+  .arrow-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-top:4px;text-align:center;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;}
+  .card-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .metric-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+  .metric-row:last-child{border-bottom:none;}
+  .metric-label{font-size:0.78rem;color:var(--muted);}
+  .metric-value{font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;}
+  .soc-bar-wrap{margin:10px 0;}
+  .soc-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.73rem;color:var(--muted);}
+  .soc-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+  .soc-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+  .module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  .module-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;}
+  .module-card .mn{font-size:0.6rem;color:var(--muted);}
+  .module-card .ms{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;}
+  .module-card .mv{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);}
+  .weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+  .wday{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+  .wday .wl{font-size:0.62rem;color:var(--muted);margin-bottom:4px;}
+  .wday .wi{font-size:1.8rem;margin-bottom:4px;}
+  .wday .ws{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--solar);}
+  .wday .wt{font-family:'JetBrains Mono',monospace;font-size:0.72rem;margin-top:2px;}
+  .wday .wd{font-size:0.6rem;color:var(--muted);margin-top:4px;}
+  .rec{border-radius:10px;padding:12px 16px;margin-top:12px;display:flex;align-items:center;gap:10px;font-size:0.82rem;}
+  .rec.charge{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);}
+  .rec.no_charge{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);}
+  .rec.unknown{background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);}
+  .phase-table{width:100%;border-collapse:collapse;margin-top:6px;}
+  .phase-table th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;}
+  .phase-table th:first-child{text-align:left;}
+  .phase-table td{font-family:'JetBrains Mono',monospace;font-size:0.78rem;padding:6px;border-bottom:1px solid var(--border);text-align:right;}
+  .phase-table td:first-child{text-align:left;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.72rem;}
+  .phase-table tr.total td{border-bottom:none;font-weight:700;}
+  .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+  .info-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .info-item .il{font-size:0.62rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;}
+  .info-item .iv{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;}
+  .info-item .is{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:2px;}
+  .btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;transition:all 0.2s;}
+  .btn:hover{opacity:0.85;transform:translateY(-1px);}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-sm{padding:5px 10px;font-size:0.72rem;}
+  .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:0.85rem;font-weight:700;z-index:1000;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast.ok{background:var(--battery);color:#000;}
+  .toast.err{background:var(--danger);color:#fff;}
+  @media(max-width:900px){.grid-3,.flow-grid{grid-template-columns:1fr;}.grid-2{grid-template-columns:1fr;}.module-grid{grid-template-columns:repeat(2,1fr);}.info-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ EMS <span>Painten</span></h1>
+  <div>
+    <span class="status-dot" id="statusDot"></span>
+    <span class="last-update" id="lastUpdate">Lade...</span>
+  </div>
+</header>
+
+<div class="energy-flow">
+  <div class="flow-title">Energiefluss</div>
+  <div class="flow-grid">
+    <div class="flow-node">
+      <div class="icon">☀️</div><div class="label">Solar</div>
+      <div class="value" id="f-solar" style="color:var(--solar)">0 W</div>
+      <div class="sub" id="f-solar-v">– V</div>
+    </div>
+    <div class="flow-arrow"><div class="arrow-line" id="arr1"></div><div class="arrow-label" id="arr1-lbl"></div></div>
+    <div class="flow-node">
+      <div class="icon">🔋</div><div class="label">Akku</div>
+      <div class="value" id="f-batt" style="color:var(--battery)">0%</div>
+      <div class="sub" id="f-batt-sub">– V · – A</div>
+    </div>
+    <div class="flow-arrow"><div class="arrow-line" id="arr2"></div><div class="arrow-label" id="arr2-lbl"></div></div>
+    <div class="flow-node">
+      <div class="icon">🏠</div><div class="label">Hausverbrauch</div>
+      <div class="value" id="f-house" style="color:var(--load)">0 W</div>
+      <div class="sub" id="f-house-sub">Netz: ± 0 W</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--solar)"></span>Wechselrichter</div>
+    <div class="metric-row"><span class="metric-label">Modus</span><span class="metric-value" id="wr-mode" style="font-size:0.7rem">–</span></div>
+    <div class="metric-row"><span class="metric-label">Solar 1</span><span class="metric-value" id="wr-sol1" style="color:var(--solar)">–</span></div>
+    <div class="metric-row"><span class="metric-label">Solar 2</span><span class="metric-value" id="wr-sol2" style="color:var(--solar)">–</span></div>
+    <div class="metric-row"><span class="metric-label">Akku</span><span class="metric-value" id="wr-batt">–</span></div>
+    <div class="metric-row"><span class="metric-label">AC Eingang</span><span class="metric-value" id="wr-ac-in">–</span></div>
+    <div class="metric-row"><span class="metric-label">AC Ausgang</span><span class="metric-value" id="wr-ac-out">–</span></div>
+    <div class="metric-row"><span class="metric-label">Temperatur</span><span class="metric-value" id="wr-temp">–</span></div>
+    <div class="metric-row"><span class="metric-label">PV Gesamtertrag</span><span class="metric-value" id="wr-pv-total" style="color:var(--solar)">–</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--load)"></span>Netz · SDM630</div>
+    <table class="phase-table">
+      <thead><tr><th>Phase</th><th>V</th><th>A</th><th>W</th></tr></thead>
+      <tbody>
+        <tr><td>L1</td><td id="sl1v">–</td><td id="sl1a">–</td><td id="sl1w">–</td></tr>
+        <tr><td>L2</td><td id="sl2v">–</td><td id="sl2a">–</td><td id="sl2w">–</td></tr>
+        <tr><td>L3</td><td id="sl3v">–</td><td id="sl3a">–</td><td id="sl3w">–</td></tr>
+        <tr class="total"><td>Σ Netz</td><td>–</td><td>–</td><td id="stotal">–</td></tr>
+      </tbody>
+    </table>
+    <div class="metric-row" style="margin-top:8px"><span class="metric-label">Frequenz</span><span class="metric-value" id="sfreq">–</span></div>
+    <div class="metric-row"><span class="metric-label">↓ Bezug gesamt</span><span class="metric-value" id="simport" style="color:var(--grid)">–</span></div>
+    <div class="metric-row"><span class="metric-label">↑ Einspeisung gesamt</span><span class="metric-value" id="sexport" style="color:var(--solar)">–</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--battery)"></span>Pylontech US2000C</div>
+    <div class="soc-bar-wrap">
+      <div class="soc-label"><span>Gesamt SOC</span><span id="pyl-soc-val" style="font-family:'JetBrains Mono',monospace;color:var(--battery)">–</span></div>
+      <div class="soc-bar"><div class="soc-fill" id="pyl-soc-fill" style="width:0%"></div></div>
+    </div>
+    <div class="metric-row"><span class="metric-label">Spannung Ø</span><span class="metric-value" id="pyl-v">–</span></div>
+    <div class="metric-row"><span class="metric-label">Strom Σ</span><span class="metric-value" id="pyl-a">–</span></div>
+    <div class="metric-row"><span class="metric-label">Status</span><span class="metric-value" id="pyl-status" style="font-size:0.72rem">–</span></div>
+    <div class="module-grid" id="pyl-modules"></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--solar)"></span>Wettervorhersage · Painten</div>
+    <div class="weather-grid" id="weather-grid"><div style="color:var(--muted);font-size:0.8rem">Lade...</div></div>
+    <div class="rec unknown" id="recommendation"><span>⏳</span><span id="rec-text">Lade...</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--accent)"></span>Energie-Übersicht</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="il">Netzbezug</div>
+        <div class="iv" id="info-bezug" style="color:var(--grid)">– W</div>
+        <div class="is" id="info-bezug-total">Gesamt: – kWh</div>
+      </div>
+      <div class="info-item">
+        <div class="il">Einspeisung</div>
+        <div class="iv" id="info-einspeisung" style="color:var(--solar)">– W</div>
+        <div class="is" id="info-einspeisung-total">Gesamt: – kWh</div>
+      </div>
+      <div class="info-item">
+        <div class="il">Akku SOC</div>
+        <div class="iv" id="info-soc" style="color:var(--battery)">– %</div>
+        <div class="is" id="info-soc-v">– V · – A</div>
+      </div>
+      <div class="info-item">
+        <div class="il">Solar aktuell</div>
+        <div class="iv" id="info-solar" style="color:var(--solar)">– W</div>
+        <div class="is" id="info-solar-total">Gesamt: – kWh</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+      <button class="btn btn-primary btn-sm" onclick="sendDiscovery()">📡 HA Discovery senden</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const f0=v=>v!=null?parseFloat(v).toFixed(0):'–';
+const f1=v=>v!=null?parseFloat(v).toFixed(1):'–';
+const f2=v=>v!=null?parseFloat(v).toFixed(2):'–';
+function set(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
+function setC(id,val,c){const e=document.getElementById(id);if(e){e.textContent=val;e.style.color=c;}}
+function wmoIcon(c){if(c===0)return'☀️';if(c<=2)return'🌤️';if(c===3)return'☁️';if(c<=48)return'🌫️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';return'⛈️';}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(ok?'ok':'err');setTimeout(()=>t.classList.remove('show'),3000);}
+
+async function fetchStatus(){
+  try{
+    const d=await(await fetch('/api/status')).json();
+    updateUI(d);
+    document.getElementById('statusDot').style.background='var(--battery)';
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('de-DE')+' Uhr';
+  }catch(e){document.getElementById('statusDot').style.background='var(--danger)';}
+}
+
+function updateUI(d){
+  const inv=d.inverter||{},sdm=d.sdm630||{},pyl=d.pylontech||{},wx=d.weather,rec=d.recommendation||{};
+  const solW=(inv.solar_input_voltage_1||0)*(inv.solar_input_current_1||0)+(inv.solar_input_voltage_2||0)*(inv.solar_input_current_2||0);
+  const battA=inv.battery_current||0,battV=inv.battery_voltage||49,battW=battV*battA;
+  const netW=sdm['Gesamt Aktivleistung']||0;
+  const houseW=solW+Math.max(0,-battW)+Math.max(0,netW);
+
+  set('f-solar',f0(solW)+' W');
+  set('f-solar-v',(inv.solar_input_voltage_1||0)+'V · '+(inv.solar_input_voltage_2||0)+'V');
+  set('f-batt',(pyl.avg_soc||0)+'%');
+  set('f-batt-sub',f2(inv.battery_voltage)+'V · '+f1(battA)+'A');
+  set('f-house',f0(houseW)+' W');
+  set('f-house-sub',netW>=0?'↓ Netz: '+f0(netW)+'W':'↑ Einspeisung: '+f0(-netW)+'W');
+  document.getElementById('arr1').className='arrow-line'+(solW>50?' solar':'');
+  set('arr1-lbl',solW>50?f0(solW)+'W →':'');
+  const bd=battA>1?'batt':battA<-1?'grid':'';
+  document.getElementById('arr2').className='arrow-line'+(bd?' '+bd:'');
+  set('arr2-lbl',Math.abs(battA)>1?f0(Math.abs(battW))+'W '+(battA>0?'→ lädt':'→ entlädt'):'');
+
+  set('wr-mode',inv.working_mode||'–');
+  set('wr-sol1',f1(inv.solar_input_voltage_1)+'V · '+f2(inv.solar_input_current_1)+'A');
+  set('wr-sol2',f1(inv.solar_input_voltage_2)+'V · '+f2(inv.solar_input_current_2)+'A');
+  set('wr-batt',f2(inv.battery_voltage)+'V · '+(inv.battery_capacity||0)+'% · '+f1(battA)+'A');
+  set('wr-ac-in',f1(inv.ac_input_voltage_r)+'V · '+f2(inv.ac_input_frequency)+'Hz');
+  set('wr-ac-out',f1(inv.ac_output_voltage_r)+'V');
+  const tmp=inv.inner_temperature||0;
+  setC('wr-temp',tmp+'°C',tmp>65?'var(--danger)':tmp>55?'var(--warn)':'var(--text)');
+  if(inv.pv_total_energy) set('wr-pv-total',inv.pv_total_energy+' kWh');
+
+  set('sl1v',f1(sdm['L1 Spannung'])+'V');set('sl2v',f1(sdm['L2 Spannung'])+'V');set('sl3v',f1(sdm['L3 Spannung'])+'V');
+  set('sl1a',f2(sdm['L1 Strom'])+'A');set('sl2a',f2(sdm['L2 Strom'])+'A');set('sl3a',f2(sdm['L3 Strom'])+'A');
+  set('sl1w',f0(sdm['L1 Wirkleistung'])+'W');set('sl2w',f0(sdm['L2 Wirkleistung'])+'W');set('sl3w',f0(sdm['L3 Wirkleistung'])+'W');
+  const tw=sdm['Gesamt Aktivleistung']||0;
+  setC('stotal',f0(tw)+'W',tw<-50?'var(--solar)':tw>50?'var(--grid)':'var(--muted)');
+  set('sfreq',f2(sdm['Frequenz'])+'Hz');
+  set('simport',f1(sdm['Import Energie'])+' kWh');
+  set('sexport',f1(sdm['Export Energie'])+' kWh');
+
+  const soc=pyl.avg_soc||0;
+  set('pyl-soc-val',soc+'%');
+  const fill=document.getElementById('pyl-soc-fill');
+  fill.style.width=soc+'%';
+  fill.style.background=soc<20?'var(--danger)':soc<40?'var(--warn)':'var(--battery)';
+  set('pyl-v',f2(pyl.avg_voltage_v)+'V');
+  const pa=pyl.total_current_a||0;
+  setC('pyl-a',f1(pa)+'A',pa>0.5?'var(--battery)':pa<-0.5?'var(--warn)':'var(--muted)');
+  set('pyl-status',pa>0.5?'⚡ Lädt':pa<-0.5?'🔋 Entlädt':'😴 Idle');
+  const mg=document.getElementById('pyl-modules');
+  if(pyl.modules&&pyl.modules.length)
+    mg.innerHTML=pyl.modules.map(m=>`<div class="module-card"><div class="mn">Modul ${m.module}</div><div class="ms" style="color:${m.soc_pct<20?'var(--danger)':m.soc_pct<40?'var(--warn)':'var(--battery)'}">${m.soc_pct}%</div><div class="mv">${m.voltage_v}V · ${m.temp_c}°C</div></div>`).join('');
+
+  const bez=Math.max(0,netW),ein=Math.max(0,-netW);
+  setC('info-bezug',f0(bez)+' W',bez>100?'var(--grid)':'var(--muted)');
+  set('info-bezug-total','Gesamt: '+f1(sdm['Import Energie'])+' kWh');
+  setC('info-einspeisung',f0(ein)+' W',ein>100?'var(--solar)':'var(--muted)');
+  set('info-einspeisung-total','Gesamt: '+f1(sdm['Export Energie'])+' kWh');
+  setC('info-soc',soc+'%',soc<20?'var(--danger)':soc<40?'var(--warn)':'var(--battery)');
+  set('info-soc-v',f2(pyl.avg_voltage_v)+'V · '+f1(pa)+'A');
+  setC('info-solar',f0(solW)+' W',solW>100?'var(--solar)':'var(--muted)');
+  set('info-solar-total','Gesamt: '+(inv.pv_total_energy||'–')+' kWh');
+
+  if(wx){
+    const days=[wx.today,wx.tomorrow,wx.day_after],labels=['Heute','Morgen','Übermorgen'];
+    document.getElementById('weather-grid').innerHTML=days.map((day,i)=>`<div class="wday"><div class="wl">${labels[i]}</div><div class="wi">${wmoIcon(day.weathercode)}</div><div class="ws">${day.sun_hours}h ☀️</div><div class="wt">${day.temp_max}°C</div><div class="wd">${day.description}</div></div>`).join('');
+  }
+  const ra=rec.action||'unknown';
+  document.getElementById('recommendation').className='rec '+ra;
+  set('rec-text',(ra==='charge'?'🔌 ':ra==='no_charge'?'☀️ ':'⏳ ')+(rec.reason||''));
+}
+
+async function sendDiscovery(){
+  try{
+    const d=await(await fetch('/api/mqtt/discovery',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();
+    toast(d.success?'✅ HA Discovery gesendet':'❌ Fehler',d.success);
+  }catch(e){toast('❌ Fehler: '+e,false);}
+}
+
+fetchStatus();
+setInterval(fetchStatus,10000);
+</script>
+</body>
+</html>
