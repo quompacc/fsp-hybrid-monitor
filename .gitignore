@@ -25,7 +25,3 @@ dashboard/data/*.db
 .DS_Store
 .idea/
 .vscode/
-
-# Local screenshots / docs exports
-docs/dashboard.png
-docs/*.png
