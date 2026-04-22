@@ -2,7 +2,11 @@
 
 Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybridwechselrichter, Batteriespeicher und Netzeinspeisung. Das System liest Echtzeitdaten von Wechselrichter, Stromzähler und Batterie aus, visualisiert sie in einem Web-Dashboard und sendet sie an HomeAssistant via MQTT.
 
-> Hinweis: Beispiel-/Produktivdaten und Screenshots sind in der Public-Version bewusst entfernt.
+## 📸 Screenshots
+
+![Dashboard Übersicht](docs/dashboard.png)
+![Hybrid System Übersicht](docs/EMS%20FSP%2015KW%20Hybrid%20System%20%C3%9Cbersicht.png)
+![Hybrid System Verlauf](docs/EMS%20FSP%2015KW%20Hybrid%20System%20Verlauf.png)
 
 ---
 
