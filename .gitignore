@@ -28,3 +28,4 @@ dashboard/data/*.db
 
 # Local screenshots / docs exports
 docs/dashboard.png
+docs/*.png
