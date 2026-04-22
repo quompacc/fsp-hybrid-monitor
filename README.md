@@ -4,7 +4,6 @@ Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybrid
 
 ## 📸 Screenshots
 
-![Dashboard Übersicht](docs/dashboard.png)
 ![Hybrid System Übersicht](docs/EMS%20FSP%2015KW%20Hybrid%20System%20%C3%9Cbersicht.png)
 ![Hybrid System Verlauf](docs/EMS%20FSP%2015KW%20Hybrid%20System%20Verlauf.png)
 
