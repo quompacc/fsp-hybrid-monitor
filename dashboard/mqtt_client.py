@@ -11,8 +11,9 @@ _client = None
 def get_client():
     global _client
     if _client is None or not _client.is_connected():
-        _client = mqtt.Client(client_id='ems-dashboard')
-        _client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+        _client = mqtt.Client(client_id='hybrid-energy-monitor')
+        if MQTT_USER or MQTT_PASSWORD:
+            _client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
         try:
             _client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
             _client.loop_start()
@@ -77,9 +78,9 @@ def publish_ha_discovery():
             config['state_class'] = 'measurement'
 
         config['device'] = {
-            'identifiers': ['ems_painten'],
-            'name':        'EMS Painten',
-            'model':       'FSP 15kW + Pylontech + SDM630',
+            'identifiers': ['hybrid_energy_monitor'],
+            'name':        'Hybrid Energy Monitor',
+            'model':       'Hybrid Inverter + Battery + Smart Meter',
             'manufacturer': 'Custom EMS'
         }
 

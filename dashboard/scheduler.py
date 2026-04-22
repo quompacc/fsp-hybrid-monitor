@@ -6,10 +6,14 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-sys.path.insert(0, '/home/eduard/ems/inverter')
-sys.path.insert(0, '/home/eduard/ems/sdm630')
-sys.path.insert(0, '/home/eduard/ems/pylontech')
-sys.path.insert(0, '/home/eduard/mpp-solar')
+_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(_BASE_DIR, 'inverter'))
+sys.path.insert(0, os.path.join(_BASE_DIR, 'sdm630'))
+sys.path.insert(0, os.path.join(_BASE_DIR, 'pylontech'))
+
+_mpp_solar_path = os.getenv('MPP_SOLAR_PATH')
+if _mpp_solar_path:
+    sys.path.insert(0, _mpp_solar_path)
 
 # Shared state
 latest = {
@@ -20,6 +24,9 @@ latest = {
     'recommendation': ('unknown', 'Noch kein Wetter geladen'),
     'last_update':    {}
 }
+
+# SOH Zähler - beim ersten Aufruf und dann jede Stunde (60x60s)
+_pylontech_counter = 0
 
 def collect_inverter():
     try:
@@ -36,6 +43,18 @@ def collect_inverter():
             data.update(mod_data)
         if et_data:
             data['pv_total_energy'] = et_data.get('generated_energy_total', 0)
+
+        # SOC Plausibilitätsprüfung - max 5% Sprung pro Messung (alle 15s)
+        new_soc  = data.get('battery_capacity')
+        last_soc = latest['inverter'].get('battery_capacity')
+        if new_soc is not None and last_soc is not None:
+            try:
+                if abs(int(new_soc) - int(last_soc)) > 5:
+                    print(f'Inverter: SOC Sprung {last_soc}% → {new_soc}% → verwerfe')
+                    data['battery_capacity'] = last_soc
+            except (ValueError, TypeError):
+                pass
+
         latest['inverter'] = data
         from datetime import datetime
         latest['last_update']['inverter'] = datetime.now().isoformat()
@@ -67,9 +86,13 @@ def collect_sdm630():
         print(f'SDM630 Fehler: {e}')
 
 def collect_pylontech():
+    global _pylontech_counter
+    _pylontech_counter += 1
+    # Ersten Aufruf und dann jede Stunde vollständig mit SOH
+    use_full = (_pylontech_counter == 1 or _pylontech_counter % 60 == 0)
     try:
         import read_pylontech
-        data = read_pylontech.read_all()
+        data = read_pylontech.read_all() if use_full else read_pylontech.read_fast()
         if not data:
             return
         v   = data.get('avg_voltage_v', 0)
@@ -80,6 +103,14 @@ def collect_pylontech():
         if soc is not None and float(soc) == 0 and data.get('module_count', 0) > 0:
             print('Pylontech: SOC=0 bei aktiven Modulen, überspringe')
             return
+        # SOH aus letztem vollständigen Abruf übernehmen wenn nicht neu geladen
+        if not use_full and latest['pylontech'].get('avg_soh_pct'):
+            data['avg_soh_pct'] = latest['pylontech']['avg_soh_pct']
+            for i, m in enumerate(data.get('modules', [])):
+                if i < len(latest['pylontech'].get('modules', [])):
+                    m['soh_pct'] = latest['pylontech']['modules'][i].get('soh_pct')
+        if use_full:
+            print(f"Pylontech SOH: {data.get('avg_soh_pct')}%")
         latest['pylontech'] = data
         from datetime import datetime
         latest['last_update']['pylontech'] = datetime.now().isoformat()
@@ -113,26 +144,13 @@ def collect_weather():
     except Exception as e:
         print(f'Wetter Fehler: {e}')
 
-def apply_auto_control():
-    try:
-        rec, reason = latest['recommendation']
-        soc = latest['pylontech'].get('avg_soc', 50)
-        if rec != 'unknown':
-            from controller import apply_weather_recommendation
-            result = apply_weather_recommendation(rec, soc, source='auto')
-            print(f'Auto-Steuerung: {result} ({reason})')
-    except Exception as e:
-        print(f'Auto-Steuerung Fehler: {e}')
-
 def start_scheduler():
     scheduler = BackgroundScheduler(timezone='Europe/Berlin')
 
-    scheduler.add_job(collect_inverter,   IntervalTrigger(seconds=15), id='inverter',     replace_existing=True)
-    scheduler.add_job(collect_sdm630,     IntervalTrigger(seconds=30), id='sdm630',       replace_existing=True)
-    scheduler.add_job(collect_pylontech,  IntervalTrigger(seconds=60), id='pylontech',    replace_existing=True)
-    scheduler.add_job(collect_weather,    IntervalTrigger(minutes=30), id='weather',      replace_existing=True)
-    # Auto-Control deaktiviert - zu riskant
-    # scheduler.add_job(apply_auto_control, IntervalTrigger(hours=1),    id='auto_control', replace_existing=True)
+    scheduler.add_job(collect_inverter,  IntervalTrigger(seconds=15), id='inverter',  replace_existing=True)
+    scheduler.add_job(collect_sdm630,    IntervalTrigger(seconds=30), id='sdm630',    replace_existing=True)
+    scheduler.add_job(collect_pylontech, IntervalTrigger(seconds=60), id='pylontech', replace_existing=True)
+    scheduler.add_job(collect_weather,   IntervalTrigger(minutes=30), id='weather',   replace_existing=True)
 
     scheduler.start()
 
@@ -142,6 +160,6 @@ def start_scheduler():
     collect_weather()
     collect_inverter()
     collect_sdm630()
-    collect_pylontech()
+    collect_pylontech()  # Erster Aufruf lädt vollständige Daten inkl. SOH
 
     return scheduler

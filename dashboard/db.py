@@ -27,7 +27,8 @@ def init_db():
             ac_out_v_r REAL, ac_out_v_s REAL, ac_out_v_t REAL,
             ac_out_hz  REAL,
             temp_inner INTEGER, temp_max INTEGER,
-            mode TEXT
+            mode TEXT,
+            pv_total_energy REAL
         );
 
         CREATE TABLE IF NOT EXISTS sdm630_data (
@@ -82,8 +83,8 @@ def insert_inverter(d):
         (solar1_v,solar2_v,solar1_a,solar2_a,batt_v,batt_pct,batt_a,
          ac_in_v_r,ac_in_v_s,ac_in_v_t,ac_in_hz,
          ac_out_v_r,ac_out_v_s,ac_out_v_t,ac_out_hz,
-         temp_inner,temp_max,mode)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+         temp_inner,temp_max,mode,pv_total_energy)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
         (d.get('solar_input_voltage_1'), d.get('solar_input_voltage_2'),
          d.get('solar_input_current_1'), d.get('solar_input_current_2'),
          d.get('battery_voltage'), d.get('battery_capacity'), d.get('battery_current'),
@@ -92,7 +93,8 @@ def insert_inverter(d):
          d.get('ac_output_voltage_r'), d.get('ac_output_voltage_s'), d.get('ac_output_voltage_t'),
          d.get('ac_output_frequency'),
          d.get('inner_temperature'), d.get('component_max_temperature'),
-         d.get('working_mode', '')))
+         d.get('working_mode', ''),
+         d.get('pv_total_energy')))
     conn.commit()
     conn.close()
 

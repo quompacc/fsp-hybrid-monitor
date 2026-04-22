@@ -1,10 +1,8 @@
-# ⚡ PV-EMS Dashboard
+# ⚡ Hybrid Energy Monitor
 
 Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybridwechselrichter, Batteriespeicher und Netzeinspeisung. Das System liest Echtzeitdaten von Wechselrichter, Stromzähler und Batterie aus, visualisiert sie in einem Web-Dashboard und sendet sie an HomeAssistant via MQTT.
 
-> **Entstanden aus der Praxis** – entwickelt für eine 15kW PV-Anlage mit 14.4 kWh Batteriespeicher.
-
-![Dashboard Screenshot](docs/dashboard.png)
+> Hinweis: Beispiel-/Produktivdaten und Screenshots sind in der Public-Version bewusst entfernt.
 
 ---
 
@@ -125,10 +123,10 @@ nano dashboard/config.py
 
 ```python
 # MQTT / HomeAssistant
-MQTT_HOST     = '192.168.1.x'   # IP deines HomeAssistant
+MQTT_HOST     = '127.0.0.1'     # oder IP deines MQTT-Brokers
 MQTT_PORT     = 1883
-MQTT_USER     = 'mqtt'
-MQTT_PASSWORD = 'geheim'
+MQTT_USER     = '<mqtt-user>'
+MQTT_PASSWORD = '<mqtt-password>'
 MQTT_PREFIX   = 'ems'
 
 # Standort für Wettervorhersage

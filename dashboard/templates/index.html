@@ -3,88 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EMS Painten</title>
+<title>Hybrid Energy Monitor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0a0e17;--bg2:#111827;--bg3:#1c2333;--border:#2a3448;--text:#e2e8f0;--muted:#64748b;--solar:#f59e0b;--grid:#3b82f6;--battery:#10b981;--load:#8b5cf6;--danger:#ef4444;--warn:#f97316;--accent:#06b6d4;}
+  :root{--bg:#edf6ef;--bg2:#ffffff;--bg3:#f4faf5;--border:#d4e3d7;--text:#213b2b;--muted:#6d8976;--solar:#d89a23;--grid:#2f7fc1;--battery:#2f9e63;--load:#2f6d54;--danger:#d64545;--warn:#d9822b;--accent:#35b56a;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:20px;}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  body{
+    background:
+      radial-gradient(1200px 520px at 8% -10%, #dbf1e2 0%, rgba(219,241,226,0) 55%),
+      radial-gradient(1000px 460px at 95% -5%, #fff4d9 0%, rgba(255,244,217,0) 50%),
+      linear-gradient(180deg,#f9fdf9 0%,#ebf5ee 100%);
+    color:var(--text);
+    font-family:'Syne',sans-serif;
+    min-height:100vh;
+    padding:20px;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+    padding:14px 18px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:rgba(255,255,255,0.7);
+    box-shadow:0 10px 30px rgba(32,63,42,0.06);
+    backdrop-filter:blur(4px);
+  }
   header h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;}
   header h1 span{color:var(--solar);}
   .status-dot{width:8px;height:8px;border-radius:50%;background:var(--battery);display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
   .last-update{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);}
-  .energy-flow{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
-  .flow-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:16px;}
-  .flow-grid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:8px;}
-  .flow-node{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
-  .flow-node .icon{font-size:2rem;margin-bottom:6px;}
-  .flow-node .label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .flow-node .value{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;margin-top:4px;}
-  .flow-node .sub{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:2px;}
-  .flow-arrow{text-align:center;}
-  .arrow-line{height:2px;background:var(--border);border-radius:2px;transition:all 0.5s;}
-  .arrow-line.solar{background:var(--solar);box-shadow:0 0 8px var(--solar);}
-  .arrow-line.batt{background:var(--battery);box-shadow:0 0 8px var(--battery);}
-  .arrow-line.grid{background:var(--grid);box-shadow:0 0 8px var(--grid);}
-  .arrow-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-top:4px;text-align:center;}
-  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
-  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;}
-  .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;}
-  .card-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
-  .metric-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
-  .metric-row:last-child{border-bottom:none;}
-  .metric-label{font-size:0.78rem;color:var(--muted);}
-  .metric-value{font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;}
-  .soc-bar-wrap{margin:10px 0;}
-  .soc-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.73rem;color:var(--muted);}
-  .soc-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
-  .soc-fill{height:100%;border-radius:4px;transition:width 1s ease;}
-  .module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
-  .module-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;}
-  .module-card .mn{font-size:0.6rem;color:var(--muted);}
-  .module-card .ms{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;}
-  .module-card .mv{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);}
-  .weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
-  .wday{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
-  .wday .wl{font-size:0.62rem;color:var(--muted);margin-bottom:4px;}
-  .wday .wi{font-size:1.8rem;margin-bottom:4px;}
-  .wday .ws{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--solar);}
-  .wday .wt{font-family:'JetBrains Mono',monospace;font-size:0.72rem;margin-top:2px;}
-  .wday .wd{font-size:0.6rem;color:var(--muted);margin-top:4px;}
-  .rec{border-radius:10px;padding:12px 16px;margin-top:12px;display:flex;align-items:center;gap:10px;font-size:0.82rem;}
-  .rec.charge{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);}
-  .rec.no_charge{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);}
-  .rec.unknown{background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);}
-  .phase-table{width:100%;border-collapse:collapse;margin-top:6px;}
-  .phase-table th{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;}
-  .phase-table th:first-child{text-align:left;}
-  .phase-table td{font-family:'JetBrains Mono',monospace;font-size:0.78rem;padding:6px;border-bottom:1px solid var(--border);text-align:right;}
-  .phase-table td:first-child{text-align:left;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.72rem;}
-  .phase-table tr.total td{border-bottom:none;font-weight:700;}
-  .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
-  .info-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;}
-  .info-item .il{font-size:0.62rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;}
-  .info-item .iv{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;}
-  .info-item .is{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:2px;}
-  .btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:700;transition:all 0.2s;}
-  .btn:hover{opacity:0.85;transform:translateY(-1px);}
-  .btn-primary{background:var(--accent);color:#000;}
-  .btn-sm{padding:5px 10px;font-size:0.72rem;}
-  .toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:0.85rem;font-weight:700;z-index:1000;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;}
-  .toast.show{opacity:1;transform:translateY(0);}
-  .toast.ok{background:var(--battery);color:#000;}
-  .toast.err{background:var(--danger);color:#fff;}
-  @media(max-width:900px){.grid-3,.flow-grid{grid-template-columns:1fr;}.grid-2{grid-template-columns:1fr;}.module-grid{grid-template-columns:repeat(2,1fr);}.info-grid{grid-template-columns:1fr;}}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;}
+  .tab-btn{
+    padding:8px 16px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:rgba(255,255,255,0.9);
+    color:var(--muted);
+    cursor:pointer;
+    font-family:'Syne',sans-serif;
+    font-weight:700;
+    font-size:0.82rem;
+    transition:all 0.2s;
+  }
+  .tab-btn.active,.tab-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .energy-flow{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 10px 28px rgba(36,67,47,0.05);} 
+  .flow-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;}
+  .eflow-wrap{background:linear-gradient(180deg,#f7fcf8,#eef7f1);border:1px solid var(--border);border-radius:14px;padding:12px;}
+  .eflow-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;}
+  .eflow-scene{font-size:0.72rem;color:var(--muted);line-height:1.3;}
+  .eflow-clock{font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .eflow-desktop{display:block;}
+  .eflow-canvas-wrap{position:relative;height:282px;width:100%;}
+  #eflow-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .eflow-layer{position:absolute;inset:0;pointer-events:none;}
+
+  .efnode{position:absolute;transform:translate(-50%,-50%);min-width:124px;max-width:154px;background:rgba(255,255,255,0.90);border:1px solid var(--border);border-radius:12px;text-align:center;padding:9px 10px;box-shadow:0 8px 18px rgba(34,63,46,.07);transition:border-color .35s ease,box-shadow .35s ease;}
+  .efnode .ico{font-size:1.12rem;line-height:1;margin-bottom:3px;}
+  .efnode .lb{font-size:0.58rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+  .efnode .vl{font-family:'JetBrains Mono',monospace;font-size:1.04rem;font-weight:700;margin-top:3px;line-height:1.05;}
+  .efnode .sub{font-family:'JetBrains Mono',monospace;font-size:0.56rem;color:var(--muted);margin-top:2px;line-height:1.25;}
+
+  .efnode-pv  {border-color:rgba(216,154,35,.35);} .efnode-pv  .vl{color:var(--solar);} 
+  .efnode-bat {border-color:rgba(47,158,99,.35);}  .efnode-bat .vl{color:var(--battery);} 
+  .efnode-grd {border-color:rgba(47,127,193,.35);} .efnode-grd .vl{color:var(--grid);} 
+  .efnode-hom {border-color:rgba(47,109,84,.30);}  .efnode-hom .vl{color:var(--load);} 
+  .efnode.active-src.efnode-pv  {box-shadow:0 0 0 1px rgba(216,154,35,.25),0 0 16px rgba(216,154,35,.18);} 
+  .efnode.active-src.efnode-bat {box-shadow:0 0 0 1px rgba(47,158,99,.25),0 0 16px rgba(47,158,99,.18);} 
+  .efnode.active-src.efnode-grd {box-shadow:0 0 0 1px rgba(47,127,193,.25),0 0 16px rgba(47,127,193,.16);} 
+
+  .mode-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+  .pill{font-size:0.64rem;padding:6px 12px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,.7);user-select:none;transition:all .2s ease;}
+  .pill-pv.on{background:rgba(216,154,35,.14);border-color:rgba(216,154,35,.55);color:var(--solar);} 
+  .pill-bat.on{background:rgba(47,158,99,.14);border-color:rgba(47,158,99,.55);color:var(--battery);} 
+  .pill-grd.on{background:rgba(47,127,193,.14);border-color:rgba(47,127,193,.55);color:var(--grid);} 
+  .pill-ngt.on{background:rgba(109,137,118,.14);border-color:rgba(109,137,118,.55);color:var(--text);} 
+
+  .eflow-mobile{display:none;margin-top:10px;}
+  .efmini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:9px;}
+  .efmini-card{background:rgba(255,255,255,.90);border:1px solid var(--border);border-radius:10px;padding:8px 9px;}
+  .efmini-card .label{font-size:0.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .efmini-card .value{font-family:'JetBrains Mono',monospace;font-size:0.92rem;font-weight:700;margin-top:2px;line-height:1.1;}
+  .efmini-card .sub{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;line-height:1.2;}
+  .efmini-list{display:grid;gap:7px;}
+  .efmini-row{display:grid;grid-template-columns:94px 1fr 68px;gap:7px;align-items:center;}
+  .efmini-name{font-size:0.6rem;color:var(--muted);}
+  .efmini-track{height:7px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;overflow:hidden;}
+  .efmini-fill{height:100%;width:0%;opacity:.25;transition:width .3s ease,opacity .2s ease;}
+  .efmini-fill.solar{background:var(--solar);} .efmini-fill.grid{background:var(--grid);} .efmini-fill.battery{background:var(--battery);} .efmini-fill.export{background:#6fbf4a;}
+  .efmini-val{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);text-align:right;}
+
+  @media(max-width:1100px){
+    .efnode{min-width:112px;max-width:136px;padding:8px 9px;}
+    .eflow-canvas-wrap{height:258px;}
+  }
+  @media(max-width:900px){
+    .grid-3,.grid-2{grid-template-columns:1fr;}
+    .module-grid{grid-template-columns:repeat(2,1fr);} 
+    .info-grid{grid-template-columns:1fr;} 
+    .eflow-desktop{display:none;} 
+    .eflow-mobile{display:block;} 
+    .energy-flow{padding:14px;}
+  }
+  @media(max-width:560px){
+    .efmini-row{grid-template-columns:84px 1fr 62px;} 
+    .efmini-name,.efmini-val{font-size:0.56rem;}
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⚡ EMS <span>Painten</span></h1>
+  <h1>⚡ Hybrid <span>Energy Monitor</span></h1>
   <div>
     <span class="status-dot" id="statusDot"></span>
     <span class="last-update" id="lastUpdate">Lade...</span>
@@ -93,23 +126,61 @@
 
 <div class="energy-flow">
   <div class="flow-title">Energiefluss</div>
-  <div class="flow-grid">
-    <div class="flow-node">
-      <div class="icon">☀️</div><div class="label">Solar</div>
-      <div class="value" id="f-solar" style="color:var(--solar)">0 W</div>
-      <div class="sub" id="f-solar-v">– V</div>
+  <div class="eflow-wrap">
+    <div class="eflow-top">
+      <div class="eflow-scene" id="ef-scene">Live · warte auf Daten…</div>
+      <div class="eflow-clock" id="ef-clock">--:--:--</div>
     </div>
-    <div class="flow-arrow"><div class="arrow-line" id="arr1"></div><div class="arrow-label" id="arr1-lbl"></div></div>
-    <div class="flow-node">
-      <div class="icon">🔋</div><div class="label">Akku</div>
-      <div class="value" id="f-batt" style="color:var(--battery)">0%</div>
-      <div class="sub" id="f-batt-sub">– V · – A</div>
+
+    <div class="eflow-desktop" aria-label="Energiefluss Live">
+      <div class="eflow-canvas-wrap">
+        <canvas id="eflow-canvas"></canvas>
+        <div class="eflow-layer">
+          <div class="efnode efnode-pv" id="nPV" style="left:20%;top:25%">
+            <div class="ico">☀️</div><div class="lb">PV-WR</div>
+            <div class="vl" id="f-solar">0 W</div>
+            <div class="sub" id="f-solar-v">–</div>
+          </div>
+          <div class="efnode efnode-bat" id="nBAT" style="left:20%;top:75%">
+            <div class="ico">🔋</div><div class="lb">Batterie</div>
+            <div class="vl" id="f-batt">0%</div>
+            <div class="sub" id="f-batt-sub">–</div>
+          </div>
+          <div class="efnode efnode-grd" id="nGRD" style="left:80%;top:25%">
+            <div class="ico">⚡</div><div class="lb">Netz</div>
+            <div class="vl" id="f-grid">0 W</div>
+            <div class="sub" id="f-grid-sub">–</div>
+          </div>
+          <div class="efnode efnode-hom" id="nHOM" style="left:80%;top:75%">
+            <div class="ico">🏠</div><div class="lb">Haus</div>
+            <div class="vl" id="f-house">0 W</div>
+            <div class="sub" id="f-house-sub">Deckung: –</div>
+          </div>
+        </div>
+      </div>
+      <div class="mode-pills">
+        <span class="pill pill-pv" id="pDay">☀️ Tag · PV</span>
+        <span class="pill pill-bat" id="pBat">🔋 Akku</span>
+        <span class="pill pill-grd" id="pGrd">⚡ Netz</span>
+        <span class="pill pill-ngt" id="pNgt">🌙 Idle</span>
+      </div>
     </div>
-    <div class="flow-arrow"><div class="arrow-line" id="arr2"></div><div class="arrow-label" id="arr2-lbl"></div></div>
-    <div class="flow-node">
-      <div class="icon">🏠</div><div class="label">Hausverbrauch</div>
-      <div class="value" id="f-house" style="color:var(--load)">0 W</div>
-      <div class="sub" id="f-house-sub">Netz: ± 0 W</div>
+
+    <div class="eflow-mobile" aria-label="Energiefluss Mobil">
+      <div class="efmini-grid">
+        <div class="efmini-card"><div class="label">PV</div><div class="value" id="mf-solar" style="color:var(--solar)">0 W</div><div class="sub" id="mf-solar-v">–</div></div>
+        <div class="efmini-card"><div class="label">Akku</div><div class="value" id="mf-batt" style="color:var(--battery)">0%</div><div class="sub" id="mf-batt-sub">–</div></div>
+        <div class="efmini-card"><div class="label">Netz</div><div class="value" id="mf-grid" style="color:var(--grid)">0 W</div><div class="sub" id="mf-grid-sub">–</div></div>
+        <div class="efmini-card"><div class="label">Haus</div><div class="value" id="mf-house" style="color:var(--load)">0 W</div><div class="sub" id="mf-house-sub">PV 0W · Akku 0W · Netz 0W</div></div>
+      </div>
+      <div class="efmini-list">
+        <div class="efmini-row"><div class="efmini-name">PV → Haus</div><div class="efmini-track"><div class="efmini-fill solar" id="mbar-pv-house"></div></div><div class="efmini-val" id="mval-pv-house">0 W</div></div>
+        <div class="efmini-row"><div class="efmini-name">PV → Akku</div><div class="efmini-track"><div class="efmini-fill solar" id="mbar-pv-batt"></div></div><div class="efmini-val" id="mval-pv-batt">0 W</div></div>
+        <div class="efmini-row"><div class="efmini-name">PV → Netz</div><div class="efmini-track"><div class="efmini-fill export" id="mbar-pv-grid"></div></div><div class="efmini-val" id="mval-pv-grid">0 W</div></div>
+        <div class="efmini-row"><div class="efmini-name">Netz → Haus</div><div class="efmini-track"><div class="efmini-fill grid" id="mbar-grid-house"></div></div><div class="efmini-val" id="mval-grid-house">0 W</div></div>
+        <div class="efmini-row"><div class="efmini-name" id="mname-grid-batt">Netz → Akku</div><div class="efmini-track"><div class="efmini-fill grid" id="mbar-grid-batt"></div></div><div class="efmini-val" id="mval-grid-batt">0 W</div></div>
+        <div class="efmini-row"><div class="efmini-name">Akku → Haus</div><div class="efmini-track"><div class="efmini-fill battery" id="mbar-batt-house"></div></div><div class="efmini-val" id="mval-batt-house">0 W</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -158,7 +229,7 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-title"><span class="dot" style="background:var(--solar)"></span>Wettervorhersage · Painten</div>
+    <div class="card-title"><span class="dot" style="background:var(--solar)"></span>Wettervorhersage</div>
     <div class="weather-grid" id="weather-grid"><div style="color:var(--muted);font-size:0.8rem">Lade...</div></div>
     <div class="rec unknown" id="recommendation"><span>⏳</span><span id="rec-text">Lade...</span></div>
   </div>
@@ -203,11 +274,137 @@ function set(id,val){const e=document.getElementById(id);if(e)e.textContent=val;
 function setC(id,val,c){const e=document.getElementById(id);if(e){e.textContent=val;e.style.color=c;}}
 function wmoIcon(c){if(c===0)return'☀️';if(c<=2)return'🌤️';if(c===3)return'☁️';if(c<=48)return'🌫️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';return'⛈️';}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(ok?'ok':'err');setTimeout(()=>t.classList.remove('show'),3000);}
+let eflowCanvas=null, eflowCtx=null, eflowW=0, eflowH=0, eflowT=0;
+const eflowState={flows:[]};
+
+function cssVar(name, fallback){
+  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v||fallback;
+}
+
+function initEflowCanvas(){
+  eflowCanvas=document.getElementById('eflow-canvas');
+  if(!eflowCanvas) return;
+  eflowCtx=eflowCanvas.getContext('2d');
+  resizeEflowCanvas();
+  window.addEventListener('resize', resizeEflowCanvas);
+}
+
+function resizeEflowCanvas(){
+  if(!eflowCanvas || !eflowCtx) return;
+  const rect=eflowCanvas.getBoundingClientRect();
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  eflowW=Math.max(1,rect.width);
+  eflowH=Math.max(1,rect.height);
+  eflowCanvas.width=Math.floor(eflowW*dpr);
+  eflowCanvas.height=Math.floor(eflowH*dpr);
+  eflowCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function eflowEdgePt(from,to){
+  const a={x:from[0]*eflowW,y:from[1]*eflowH};
+  const b={x:to[0]*eflowW,y:to[1]*eflowH};
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const len=Math.sqrt(dx*dx+dy*dy)+0.001;
+  const hw=58, hh=40;
+  const sc=Math.min(hw/Math.max(1,Math.abs(dx)), hh/Math.max(1,Math.abs(dy)));
+  return {x:a.x+dx*sc,y:a.y+dy*sc};
+}
+
+function drawEflowWave(from,to,watts,color,phase){
+  if(!eflowCtx || watts<=6 || eflowW<=1 || eflowH<=1) return;
+  const str=Math.min((Number(watts)||0)/Math.max(1,window._eflowBase||1),1);
+  const amp=0.9+str*2.7;
+  const pump=0.2+str*0.5;
+
+  const e1=eflowEdgePt(from,to);
+  const e2=eflowEdgePt(to,from);
+  const dx=e2.x-e1.x, dy=e2.y-e1.y;
+  const len=Math.sqrt(dx*dx+dy*dy)+0.001;
+  const nx=-dy/len, ny=dx/len;
+  const steps=Math.max(10,Math.ceil(len));
+
+  eflowCtx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const p=i/steps;
+    const bx=e1.x+dx*p, by=e1.y+dy*p;
+    const pm=1+pump*Math.sin(p*Math.PI*2+eflowT*1.3+phase);
+    const w=Math.sin(p*Math.PI*4+eflowT+phase)*amp*pm;
+    if(i===0) eflowCtx.moveTo(bx+nx*w,by+ny*w);
+    else eflowCtx.lineTo(bx+nx*w,by+ny*w);
+  }
+  eflowCtx.strokeStyle=color;
+  eflowCtx.globalAlpha=0.55;
+  eflowCtx.lineWidth=1+str*1.9;
+  eflowCtx.lineCap='round';
+  eflowCtx.stroke();
+  eflowCtx.globalAlpha=1;
+
+  const ap=0.52+0.08*Math.sin(eflowT*2+phase);
+  const ax=e1.x+dx*ap, ay=e1.y+dy*ap;
+  const adx=dx/len, ady=dy/len;
+  eflowCtx.beginPath();
+  eflowCtx.moveTo(ax-adx*5-ady*3.5, ay-ady*5+adx*3.5);
+  eflowCtx.lineTo(ax+adx*4, ay+ady*4);
+  eflowCtx.lineTo(ax-adx*5+ady*3.5, ay-ady*5-adx*3.5);
+  eflowCtx.strokeStyle=color;
+  eflowCtx.globalAlpha=0.72;
+  eflowCtx.lineWidth=1.15;
+  eflowCtx.stroke();
+  eflowCtx.globalAlpha=1;
+}
+
+function animateEflow(){
+  if(eflowCtx){
+    eflowCtx.clearRect(0,0,eflowW,eflowH);
+    for(const f of eflowState.flows){
+      drawEflowWave(f.from,f.to,f.watts,f.color,f.phase||0);
+    }
+  }
+  eflowT+=0.018;
+  requestAnimationFrame(animateEflow);
+}
+
+function setNodeActive(id,on){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('active-src',!!on);
+}
+
+function setModePill(mode){
+  ['pDay','pBat','pGrd','pNgt'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('on');
+  });
+  const map={day:'pDay',bat:'pBat',grd:'pGrd',night:'pNgt'};
+  const target=document.getElementById(map[mode]||'pNgt');
+  if(target) target.classList.add('on');
+}
+
+function setMiniPath(barId,valId,power,share,text){
+  const bar=document.getElementById(barId);
+  const val=document.getElementById(valId);
+  const p=Math.max(0,Number(power)||0);
+  const s=Math.max(0,Math.min(1,Number(share)||0));
+  if(bar){
+    bar.style.width=(p>6?Math.max(4,s*100):0).toFixed(1)+'%';
+    bar.style.opacity=p>6?0.94:0.22;
+  }
+  if(val) val.textContent=text;
+}
+
+function tickEflowClock(){
+  const el=document.getElementById('ef-clock');
+  if(!el) return;
+  el.textContent=new Date().toLocaleTimeString('de-DE');
+}
+
 
 async function fetchStatus(){
   try{
-    const d=await(await fetch('/api/status')).json();
-    updateUI(d);
+    const res = await fetch('/api/status');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d = await res.json();
+    try { updateUI(d); } catch(e) { console.error('UI update error', e); }
     document.getElementById('statusDot').style.background='var(--battery)';
     document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('de-DE')+' Uhr';
   }catch(e){document.getElementById('statusDot').style.background='var(--danger)';}
@@ -218,19 +415,101 @@ function updateUI(d){
   const solW=(inv.solar_input_voltage_1||0)*(inv.solar_input_current_1||0)+(inv.solar_input_voltage_2||0)*(inv.solar_input_current_2||0);
   const battA=inv.battery_current||0,battV=inv.battery_voltage||49,battW=battV*battA;
   const netW=sdm['Gesamt Aktivleistung']||0;
-  const houseW=solW+Math.max(0,-battW)+Math.max(0,netW);
+  const bez=Math.max(0,netW),ein=Math.max(0,-netW);
+  const battChargeW=Math.max(0,battW),battDischargeW=Math.max(0,-battW);
+  const houseW=Math.max(0,solW+netW-battW);
+  const wireRef=Math.max(1,houseW,battChargeW,battDischargeW,bez,ein,solW);
+
+  // Flow decomposition: sources -> sinks, with battery charge as own sink
+  let battToHouseW=Math.min(battDischargeW,houseW);
+  let houseNeedAfterBatt=Math.max(0,houseW-battToHouseW);
+  let pvToHouseW=Math.min(solW,houseNeedAfterBatt);
+  let gridToHouseW=Math.min(bez,Math.max(0,houseNeedAfterBatt-pvToHouseW));
+
+  let pvRemaining=Math.max(0,solW-pvToHouseW);
+  let gridRemaining=Math.max(0,bez-gridToHouseW);
+  let pvToBattW=Math.min(battChargeW,pvRemaining);
+  let gridToBattW=Math.min(gridRemaining,Math.max(0,battChargeW-pvToBattW));
+
+  let pvToGridW=Math.min(ein,Math.max(0,solW-pvToHouseW-pvToBattW));
+  let battToGridW=Math.max(0,ein-pvToGridW);
+
+  // small balancing correction for display consistency
+  const houseCovered=pvToHouseW+gridToHouseW+battToHouseW;
+  if(houseW>0&&houseCovered<houseW){
+    pvToHouseW+=houseW-houseCovered;
+  }
 
   set('f-solar',f0(solW)+' W');
   set('f-solar-v',(inv.solar_input_voltage_1||0)+'V · '+(inv.solar_input_voltage_2||0)+'V');
+  setC('f-grid',f0(Math.abs(netW))+' W',netW>=0?'var(--grid)':'var(--solar)');
+  set('f-grid-sub',netW>=0?'Bezug vom Netz':'Einspeisung');
   set('f-batt',(pyl.avg_soc||0)+'%');
-  set('f-batt-sub',f2(inv.battery_voltage)+'V · '+f1(battA)+'A');
+  const battState=Math.abs(battW)<25?'idle':(battW>=0?'lädt':'entlädt');
+  const battSub = battChargeW>25
+    ? f2(inv.battery_voltage)+'V · '+f1(battA)+'A · lädt'
+    : f2(inv.battery_voltage)+'V · '+f1(battA)+'A · '+battState;
+  set('f-batt-sub',battSub);
   set('f-house',f0(houseW)+' W');
-  set('f-house-sub',netW>=0?'↓ Netz: '+f0(netW)+'W':'↑ Einspeisung: '+f0(-netW)+'W');
-  document.getElementById('arr1').className='arrow-line'+(solW>50?' solar':'');
-  set('arr1-lbl',solW>50?f0(solW)+'W →':'');
-  const bd=battA>1?'batt':battA<-1?'grid':'';
-  document.getElementById('arr2').className='arrow-line'+(bd?' '+bd:'');
-  set('arr2-lbl',Math.abs(battA)>1?f0(Math.abs(battW))+'W '+(battA>0?'→ lädt':'→ entlädt'):'');
+  set('f-house-sub','Deckung: PV '+f0(pvToHouseW)+'W · Akku '+f0(battToHouseW)+'W · Netz '+f0(gridToHouseW)+'W');
+
+  set('mf-solar',f0(solW)+' W');
+  set('mf-solar-v',(inv.solar_input_voltage_1||0)+'V · '+(inv.solar_input_voltage_2||0)+'V');
+  setC('mf-grid',f0(Math.abs(netW))+' W',netW>=0?'var(--grid)':'var(--solar)');
+  set('mf-grid-sub',netW>=0?'Bezug vom Netz':'Einspeisung');
+  set('mf-batt',(pyl.avg_soc||0)+'%');
+  set('mf-batt-sub',f2(inv.battery_voltage)+'V · '+f1(battA)+'A');
+  set('mf-house',f0(houseW)+' W');
+  set('mf-house-sub','PV '+f0(pvToHouseW)+'W · Akku '+f0(battToHouseW)+'W · Netz '+f0(gridToHouseW)+'W');
+
+  const srcPv=pvToHouseW+pvToBattW+pvToGridW;
+  const srcBatt=battToHouseW+battToGridW;
+  const srcGrid=gridToHouseW+gridToBattW;
+  setNodeActive('nPV',srcPv>25);
+  setNodeActive('nBAT',srcBatt>25);
+  setNodeActive('nGRD',srcGrid>25);
+
+  let mode='night';
+  if(srcPv>=srcBatt && srcPv>=srcGrid && srcPv>80) mode='day';
+  else if(srcBatt>=srcGrid && srcBatt>80) mode='bat';
+  else if(srcGrid>80) mode='grd';
+
+  let scene='Nacht · Idle';
+  if(mode==='day'){
+    scene=pvToGridW>120?'Tag · PV-Überschuss → Einspeisung':(pvToBattW>120?'Tag · PV lädt Akku':'Tag · PV versorgt Haus');
+  }else if(mode==='bat'){
+    scene='Nacht · Akku versorgt Haus';
+  }else if(mode==='grd'){
+    scene='Netzbezug · Netz deckt Bedarf';
+  }else if(houseW>120){
+    scene='Nacht · Grundlast aktiv';
+  }
+  set('ef-scene',scene);
+  setModePill(mode);
+
+  const colSolar=cssVar('--solar','#d89a23');
+  const colBatt=cssVar('--battery','#2f9e63');
+  const colGrid=cssVar('--grid','#2f7fc1');
+  window._eflowBase=Math.max(1,wireRef);
+  eflowState.flows=[
+    {from:[0.20,0.25],to:[0.80,0.25],watts:pvToGridW,color:colSolar,phase:0.0},
+    {from:[0.20,0.25],to:[0.20,0.75],watts:pvToBattW,color:colBatt,phase:1.2},
+    {from:[0.20,0.25],to:[0.80,0.75],watts:pvToHouseW,color:colSolar,phase:2.0},
+    {from:[0.20,0.75],to:[0.80,0.75],watts:battToHouseW,color:colBatt,phase:0.8},
+    {from:[0.80,0.25],to:[0.80,0.75],watts:gridToHouseW,color:colGrid,phase:1.6},
+    {from:[0.80,0.25],to:[0.20,0.75],watts:gridToBattW,color:colGrid,phase:2.8},
+    {from:[0.20,0.75],to:[0.80,0.25],watts:battToGridW,color:colBatt,phase:3.4}
+  ];
+
+  setMiniPath('mbar-pv-house','mval-pv-house',pvToHouseW,pvToHouseW/wireRef,f0(pvToHouseW)+' W');
+  setMiniPath('mbar-pv-batt','mval-pv-batt',pvToBattW,pvToBattW/wireRef,f0(pvToBattW)+' W');
+  setMiniPath('mbar-pv-grid','mval-pv-grid',pvToGridW,pvToGridW/wireRef,f0(pvToGridW)+' W');
+  setMiniPath('mbar-grid-house','mval-grid-house',gridToHouseW,gridToHouseW/wireRef,f0(gridToHouseW)+' W');
+  const gridBattW=Math.max(gridToBattW,battToGridW);
+  set('mname-grid-batt',battToGridW>8?'Akku → Netz':'Netz → Akku');
+  setMiniPath('mbar-grid-batt','mval-grid-batt',gridBattW,gridBattW/wireRef,f0(gridBattW)+' W');
+  setMiniPath('mbar-batt-house','mval-batt-house',battToHouseW,battToHouseW/wireRef,f0(battToHouseW)+' W');
+
 
   set('wr-mode',inv.working_mode||'–');
   set('wr-sol1',f1(inv.solar_input_voltage_1)+'V · '+f2(inv.solar_input_current_1)+'A');
@@ -262,9 +541,13 @@ function updateUI(d){
   set('pyl-status',pa>0.5?'⚡ Lädt':pa<-0.5?'🔋 Entlädt':'😴 Idle');
   const mg=document.getElementById('pyl-modules');
   if(pyl.modules&&pyl.modules.length)
-    mg.innerHTML=pyl.modules.map(m=>`<div class="module-card"><div class="mn">Modul ${m.module}</div><div class="ms" style="color:${m.soc_pct<20?'var(--danger)':m.soc_pct<40?'var(--warn)':'var(--battery)'}">${m.soc_pct}%</div><div class="mv">${m.voltage_v}V · ${m.temp_c}°C</div></div>`).join('');
+    mg.innerHTML=pyl.modules.map(m=>{
+      const soh=m.soh_pct?m.soh_pct.toFixed(1):null;
+      const sc=!soh?'var(--muted)':m.soh_pct>90?'#10b981':m.soh_pct>80?'#f59e0b':'#ef4444';
+      const bar=soh?`<div class="soh-bar"><div class="soh-fill" style="width:${m.soh_pct}%;background:${sc}"></div></div><div class="soh-val" style="color:${sc}">SOH ${soh}%</div>`:'';
+      return `<div class="module-card"><div class="mn">Modul ${m.module}</div><div class="ms" style="color:${m.soc_pct<20?'var(--danger)':m.soc_pct<40?'var(--warn)':'var(--battery)'}">${m.soc_pct}%</div><div class="mv">${m.voltage_v}V · ${m.temp_c}°C</div>${bar}</div>`;
+    }).join('');
 
-  const bez=Math.max(0,netW),ein=Math.max(0,-netW);
   setC('info-bezug',f0(bez)+' W',bez>100?'var(--grid)':'var(--muted)');
   set('info-bezug-total','Gesamt: '+f1(sdm['Import Energie'])+' kWh');
   setC('info-einspeisung',f0(ein)+' W',ein>100?'var(--solar)':'var(--muted)');
@@ -290,8 +573,244 @@ async function sendDiscovery(){
   }catch(e){toast('❌ Fehler: '+e,false);}
 }
 
+initEflowCanvas();
+tickEflowClock();
+setModePill('night');
+setInterval(tickEflowClock,1000);
+requestAnimationFrame(animateEflow);
 fetchStatus();
 setInterval(fetchStatus,10000);
 </script>
 </body>
 </html>
+<!-- HISTORY TAB INJECTION - run after page load -->
+<script>
+// Inject History Tab button and pane into existing dashboard
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Add tab button
+  const tabDiv = document.createElement('div');
+  tabDiv.className = 'tabs';
+  tabDiv.style.cssText = 'display:flex;gap:6px;margin-bottom:18px;';
+  tabDiv.innerHTML = `
+    <button class="tab-btn active" id="tb-overview" onclick="showTab('overview',this)">📊 Übersicht</button>
+    <button class="tab-btn" id="tb-history" onclick="showTab('history',this)">📈 Verlauf</button>
+  `;
+
+  // Wrap existing content
+  const body = document.body;
+  const existing = Array.from(body.children).filter(c => c !== document.getElementById('toast'));
+  const overviewDiv = document.createElement('div');
+  overviewDiv.id = 'tab-overview';
+  existing.forEach(el => overviewDiv.appendChild(el));
+
+  body.innerHTML = '';
+  body.appendChild(tabDiv);
+  body.appendChild(overviewDiv);
+  body.appendChild(document.createElement('div')); // toast placeholder
+
+  // Re-add toast
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.id = 'toast';
+  body.appendChild(toast);
+
+  // Build history tab
+  const histDiv = document.createElement('div');
+  histDiv.id = 'tab-history';
+  histDiv.style.display = 'none';
+  histDiv.innerHTML = `
+    <style>
+      .period-btns{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+      .pb{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;transition:all 0.2s;}
+      .pb.active,.pb:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+      .totals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px;}
+      .total-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 8px 20px rgba(33,59,43,0.05);}
+      .total-card .tl{font-size:0.62rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;}
+      .total-card .tv{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;}
+      .total-card .ts2{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);margin-top:3px;}
+      .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+      .chart-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px;}
+      .chart-wrap{position:relative;height:220px;}
+      .bar-chart-wrap{position:relative;height:260px;}
+      @media(max-width:900px){.totals-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));}}
+    </style>
+
+    <div class="period-btns">
+      <button class="pb active" onclick="setPeriod('today',this)">Heute</button>
+      <button class="pb" onclick="setPeriod(168,this)">7 Tage</button>
+      <button class="pb" onclick="setPeriod(720,this)">30 Tage</button>
+      <button class="pb" onclick="setPeriod(8760,this)">Jahr</button>
+    </div>
+
+    <div class="totals-grid" id="totals-grid">
+      <div class="total-card"><div class="tl">☀️ Solar</div><div class="tv" id="tot-solar">– kWh</div><div class="ts2">&nbsp;</div></div>
+      <div class="total-card"><div class="tl">🏠 Hausverbrauch</div><div class="tv" id="tot-house">– kWh</div><div class="ts2" id="tot-house-note">Netto-Last aus Leistung</div></div>
+      <div class="total-card"><div class="tl">🌐 Haus aus Netz</div><div class="tv" id="tot-house-grid" style="color:var(--grid)">– kWh</div><div class="ts2" id="tot-house-grid-note">Anteil am Hausverbrauch</div></div>
+      <div class="total-card"><div class="tl">🌱 Haus aus PV+Akku</div><div class="tv" id="tot-house-own" style="color:var(--battery)">– kWh</div><div class="ts2" id="tot-house-own-note">Eigenversorgung inkl. Akku</div></div>
+      <div class="total-card"><div class="tl">↑ Einspeisung</div><div class="tv" id="tot-ein" style="color:var(--solar)">– kWh</div><div class="ts2">&nbsp;</div></div>
+      <div class="total-card"><div class="tl">⚡ Autarkie</div><div class="tv" id="tot-autarkie" style="color:var(--accent)">– %</div><div class="ts2" id="tot-autarkie-note">Netzanteil am Hausverbrauch</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">⚡ Leistungsverlauf (W) · Akku↔Haus (+ entlädt / - lädt)</div>
+      <div class="chart-wrap"><canvas id="chart-power"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">🔋 Akku SOC Verlauf (%)</div>
+      <div class="chart-wrap"><canvas id="chart-soc"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">📅 Tages-Energie (kWh)</div>
+      <div class="bar-chart-wrap"><canvas id="chart-daily"></canvas></div>
+    </div>
+  `;
+  body.insertBefore(histDiv, toast);
+
+  // Load Chart.js
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+  script.onload = () => {
+    Chart.defaults.color = '#6d8976';
+    Chart.defaults.borderColor = '#d4e3d7';
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+    Chart.defaults.font.size = 11;
+    initCharts();
+    if (document.getElementById('tab-history').style.display !== 'none') loadHistory();
+  };
+  document.head.appendChild(script);
+});
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.getElementById('tab-overview').style.display = name === 'overview' ? 'block' : 'none';
+  document.getElementById('tab-history').style.display  = name === 'history'  ? 'block' : 'none';
+  document.querySelectorAll('.pb-tab, .tab-btn, [id^="tb-"]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'history') loadHistory();
+}
+
+// ── Period ─────────────────────────────────────────────────────────────────
+let currentHours = 'today';
+function setPeriod(hours, btn) {
+  currentHours = hours;
+  document.querySelectorAll('.pb').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadHistory();
+}
+
+// ── Charts ─────────────────────────────────────────────────────────────────
+let chartPower, chartSoc, chartDaily;
+
+function initCharts() {
+  const cfg = (type, data, opts) => ({type, data, options: {
+    responsive: true, maintainAspectRatio: false,
+    animation: {duration: 400},
+    plugins: {legend: {position:'top', labels:{boxWidth:12, padding:16}},
+              tooltip: {mode:'index', intersect:false}},
+    scales: {x: {ticks:{maxTicksLimit:10, maxRotation:0}}, y: {}},
+    ...opts
+  }});
+
+  const powerCtx = document.getElementById('chart-power').getContext('2d');
+  chartPower = new Chart(powerCtx, cfg('line', {
+    datasets: [
+      {label:'Solar', borderColor:'#d89a23', backgroundColor:'rgba(216,154,35,0.12)', fill:true, tension:0.3, pointRadius:0, data:[]},
+      {label:'Hausverbrauch', borderColor:'#2f6d54', backgroundColor:'rgba(47,109,84,0.12)', fill:true, tension:0.3, pointRadius:0, data:[]},
+      {label:'Netzbezug', borderColor:'#2f7fc1', backgroundColor:'rgba(47,127,193,0.10)', fill:true, tension:0.3, pointRadius:0, data:[]},
+      {label:'Einspeisung', borderColor:'#6fbf4a', backgroundColor:'rgba(111,191,74,0.10)', fill:true, tension:0.3, pointRadius:0, data:[]},
+      {label:'Akku ↔ Haus', borderColor:'#2f9e63', backgroundColor:'rgba(47,158,99,0.06)', fill:false, tension:0.3, pointRadius:0, data:[]},
+    ]
+  }, {scales:{x:{ticks:{maxTicksLimit:12}}, y:{title:{display:true,text:'Watt'}, ticks:{maxTicksLimit:8}}}}));
+
+  const socCtx = document.getElementById('chart-soc').getContext('2d');
+  chartSoc = new Chart(socCtx, cfg('line', {
+    datasets: [{
+      label:'SOC %', borderColor:'#2f9e63', backgroundColor:'rgba(47,158,99,0.18)',
+      fill:true, tension:0.3, pointRadius:0, data:[]
+    }]
+  }, {scales:{x:{ticks:{maxTicksLimit:12}}, y:{min:0, max:100, title:{display:true,text:'%'}}}}));
+
+  const dailyCtx = document.getElementById('chart-daily').getContext('2d');
+  chartDaily = new Chart(dailyCtx, cfg('bar', {
+    labels:[],
+    datasets: [
+      {label:'Solar kWh',       backgroundColor:'rgba(216,154,35,0.82)', data:[]},
+      {label:'Netzbezug kWh',   backgroundColor:'rgba(47,127,193,0.82)', data:[]},
+      {label:'Einspeisung kWh', backgroundColor:'rgba(111,191,74,0.82)', data:[]},
+    ]
+  }, {scales:{x:{stacked:false, ticks:{maxTicksLimit:15}}, y:{title:{display:true,text:'kWh'}}}}));
+}
+
+// ── Load Data ──────────────────────────────────────────────────────────────
+async function loadHistory() {
+  if (!chartPower) return;
+
+  // Totals
+  try {
+    const tot = await (await fetch('/api/analytics/totals')).json();
+    const p = currentHours === 'today' ? 'today' : currentHours <= 168 ? 'week' : currentHours <= 720 ? 'month' : 'year';
+    const t = tot[p];
+    const house = Math.max(0, Number(t.house_kwh || 0));
+    const gridImport = Math.max(0, Number(t.bezug_kwh || 0));
+    const houseFromGrid = Math.min(house, gridImport);
+    const houseFromOwn = Math.max(0, house - houseFromGrid);
+    const houseFromGridPct = house > 0 ? (houseFromGrid / house) * 100 : 0;
+    const houseFromOwnPct = house > 0 ? (houseFromOwn / house) * 100 : 0;
+    document.getElementById('tot-solar').textContent   = t.solar_kwh + ' kWh';
+    document.getElementById('tot-house').textContent   = t.house_kwh + ' kWh';
+    document.getElementById('tot-house-grid').textContent = f2(houseFromGrid) + ' kWh';
+    document.getElementById('tot-house-own').textContent = f2(houseFromOwn) + ' kWh';
+    document.getElementById('tot-ein').textContent     = t.einspeisung_kwh + ' kWh';
+    document.getElementById('tot-autarkie').textContent = t.autarkie_pct + ' %';
+    document.getElementById('tot-house-note').textContent =
+      t.house_method === 'power_integrated'
+        ? 'Netto-Last aus Leistung: PV + Netz - Akku'
+        : 'Fallback-Bilanz: PV + Netz - Einspeisung - Akku-Netto';
+    document.getElementById('tot-house-grid-note').textContent = f1(houseFromGridPct) + '% vom Hausverbrauch';
+    document.getElementById('tot-house-own-note').textContent = f1(houseFromOwnPct) + '% vom Hausverbrauch';
+    document.getElementById('tot-autarkie-note').textContent = 'Je kleiner Netzbezug, desto höher die Autarkie';
+  } catch(e) {}
+
+  // Power chart
+  try {
+    const energyHours = currentHours === 'today' ? 'today' : currentHours;
+    const rows = await (await fetch('/api/analytics/energy?hours=' + energyHours)).json();
+    const fmt = t => {
+      const d = new Date(t);
+      if (currentHours === 'today' || currentHours <= 24) return d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+      if (currentHours <= 168) return d.toLocaleDateString('de-DE', {weekday:'short'}) + ' ' + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+      return d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'});
+    };
+    const labels = rows.map(r => fmt(r.t));
+    chartPower.data.labels = labels;
+    chartPower.data.datasets[0].data = rows.map(r => r.solar_w);
+    chartPower.data.datasets[1].data = rows.map(r => r.house_w);
+    chartPower.data.datasets[2].data = rows.map(r => r.bezug_w);
+    chartPower.data.datasets[3].data = rows.map(r => r.einspeisung_w);
+    chartPower.data.datasets[4].data = rows.map(r => r.batt_to_house_w);
+    chartPower.update();
+
+    chartSoc.data.labels = labels;
+    chartSoc.data.datasets[0].data = rows.map(r => r.soc);
+    chartSoc.update();
+  } catch(e) {}
+
+  // Daily bar chart
+  try {
+    const days = currentHours === 'today' ? 7 : currentHours <= 168 ? 14 : currentHours <= 720 ? 30 : 365;
+    const daily = await (await fetch('/api/analytics/daily?days=' + days)).json();
+    const dlabels = daily.map(r => {
+      const d = new Date(r.day);
+      return d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'});
+    });
+    chartDaily.data.labels = dlabels;
+    chartDaily.data.datasets[0].data = daily.map(r => r.solar_kwh);
+    chartDaily.data.datasets[1].data = daily.map(r => r.bezug_kwh);
+    chartDaily.data.datasets[2].data = daily.map(r => r.einspeisung_kwh);
+    chartDaily.update();
+  } catch(e) {}
+}
+</script>

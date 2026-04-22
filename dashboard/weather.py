@@ -1,5 +1,5 @@
 """
-Open-Meteo Wettervorhersage für Painten
+Open-Meteo Wettervorhersage
 Kein API Key nötig
 """
 import requests

@@ -1,7 +1,9 @@
 #!/bin/bash
 # EMS Dashboard sauber starten
 
-cd /home/eduard/ems/dashboard
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/dashboard"
 
 # Alle alten Prozesse killen
 pkill -9 -f "app.py" 2>/dev/null
@@ -11,5 +13,10 @@ fuser -k 5000/tcp 2>/dev/null
 sleep 2
 
 # Starten
-source /home/eduard/ems/venv/bin/activate
+if [[ -f "$SCRIPT_DIR/venv/bin/activate" ]]; then
+  source "$SCRIPT_DIR/venv/bin/activate"
+elif [[ -f "$SCRIPT_DIR/.venv/bin/activate" ]]; then
+  source "$SCRIPT_DIR/.venv/bin/activate"
+fi
+
 python app.py

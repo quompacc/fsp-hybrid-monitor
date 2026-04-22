@@ -2,17 +2,20 @@
 """
 SDM630 Stromzähler - RS485 Modbus
 Aktives Lesen mit Kollisions-Toleranz und Plausibilitätsprüfung.
-Unplausible Werte werden verworfen - letzter gültiger Wert bleibt erhalten.
+Energiezähler werden gegen DB-Werte validiert - keine Sprünge möglich.
 """
 
 import serial
 import serial.serialutil
-import struct, time
+import struct, time, os
 from datetime import datetime
 
 PORT     = '/dev/ttyUSB1'
 BAUDRATE = 19200
 SDM_ADDR = 1
+
+# DB Pfad für Cache-Initialisierung
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'ems.db')
 
 REGISTERS = [
     (0x0000, "L1 Spannung",          "V"),
@@ -44,13 +47,37 @@ PLAUSIBILITY = {
     "L3 Wirkleistung":      (-15000, 15000),
     "Gesamt Aktivleistung": (-15000, 15000),
     "Frequenz":             (45,    55),
-    "Import Energie":       (100,   999999),
-    "Export Energie":       (0,     999999),
-    "Gesamt Energie":       (100,   999999),
+    "Import Energie":       (1000,  25000),   # Import nie > 25000 kWh
+    "Export Energie":       (1000,  45000),   # Export nie > 45000 kWh
+    "Gesamt Energie":       (1000,  70000),
 }
 
 # Letzter bekannter gültiger Wert je Register
 _last_good = {}
+_cache_initialized = False
+
+def init_cache_from_db():
+    """Beim Start letzten bekannten guten Wert aus DB laden"""
+    global _cache_initialized
+    if _cache_initialized:
+        return
+    try:
+        import sqlite3
+        conn = sqlite3.connect(DB_PATH)
+        r = conn.execute("""
+            SELECT import_kwh, export_kwh FROM sdm630_data
+            WHERE import_kwh > 1000 AND import_kwh < 25000
+              AND export_kwh > 1000 AND export_kwh < 45000
+            ORDER BY ts DESC LIMIT 1
+        """).fetchone()
+        if r:
+            _last_good['Import Energie'] = (r[0], 'kWh')
+            _last_good['Export Energie'] = (r[1], 'kWh')
+            print(f'SDM630 Cache: Import={r[0]:.2f}, Export={r[1]:.2f}')
+        conn.close()
+    except Exception as e:
+        print(f'SDM630 Cache-Init Fehler: {e}')
+    _cache_initialized = True
 
 def crc16(data):
     crc = 0xFFFF
@@ -64,7 +91,16 @@ def is_plausible(name, value):
     if name not in PLAUSIBILITY:
         return True
     lo, hi = PLAUSIBILITY[name]
-    return lo <= value <= hi
+    if not (lo <= value <= hi):
+        print(f'SDM630: {name}={value} außerhalb [{lo},{hi}] → verwerfen')
+        return False
+    # Energiezähler dürfen nur steigen, nie fallen
+    if name in ('Import Energie', 'Export Energie', 'Gesamt Energie'):
+        last = _last_good.get(name)
+        if last and value < last[0] * 0.99:
+            print(f'SDM630: {name} fällt ab! {value} < {last[0]} → verwerfen')
+            return False
+    return True
 
 def read_register(ser, reg):
     req = struct.pack('>BBHH', SDM_ADDR, 4, reg, 2)
@@ -84,6 +120,7 @@ def read_register(ser, reg):
     return None
 
 def read_all():
+    init_cache_from_db()
     try:
         ser = serial.Serial(port=PORT, baudrate=BAUDRATE,
                             bytesize=8, parity='N', stopbits=1, timeout=0.5)
@@ -98,15 +135,11 @@ def read_all():
                     val = round(val, 2)
                     if is_plausible(name, val):
                         results[name] = (val, unit)
-                        _last_good[name] = (val, unit)  # Cache aktualisieren
+                        _last_good[name] = (val, unit)
                     elif name in _last_good:
-                        results[name] = _last_good[name]  # Alten Wert behalten
-                        # Nur bei deutlich falschen Werten loggen
-                        lo, hi = PLAUSIBILITY.get(name, (None, None))
-                        if lo and (val < lo * 0.5 or val > hi * 2):
-                            print(f'SDM630: {name} unplausibel ({val} {unit}), behalte {_last_good[name][0]}')
+                        results[name] = _last_good[name]
                 elif name in _last_good:
-                    results[name] = _last_good[name]  # Kein Wert gelesen, alten behalten
+                    results[name] = _last_good[name]
             except serial.serialutil.SerialException:
                 if name in _last_good:
                     results[name] = _last_good[name]
@@ -116,7 +149,6 @@ def read_all():
         return results
 
     except serial.serialutil.SerialException:
-        # Port nicht verfügbar - cached Werte zurückgeben falls vorhanden
         if _last_good:
             return dict(_last_good)
         return {}
