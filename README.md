@@ -1,11 +1,10 @@
-# ⚡ Hybrid Energy Monitor
+# ⚡ PV-EMS Dashboard
 
 Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybridwechselrichter, Batteriespeicher und Netzeinspeisung. Das System liest Echtzeitdaten von Wechselrichter, Stromzähler und Batterie aus, visualisiert sie in einem Web-Dashboard und sendet sie an HomeAssistant via MQTT.
 
-## 📸 Screenshots
+> **Entstanden aus der Praxis** – entwickelt für eine 15kW PV-Anlage mit 14.4 kWh Batteriespeicher.
 
-![Hybrid System Übersicht](docs/EMS%20FSP%2015KW%20Hybrid%20System%20%C3%9Cbersicht.png)
-![Hybrid System Verlauf](docs/EMS%20FSP%2015KW%20Hybrid%20System%20Verlauf.png)
+![Dashboard Screenshot](docs/dashboard.png)
 
 ---
 
@@ -25,10 +24,11 @@ Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybrid
 ## 🔌 Kompatible Hardware
 
 ### Wechselrichter
+
 Das System nutzt [mpp-solar](https://github.com/jblance/mpp-solar) zur WR-Kommunikation. Damit sind alle WR mit **PI17INFINI-Protokoll** kompatibel, u.a.:
 
 | Hersteller | Modell |
-|------------|--------|
+|---|---|
 | FSP | Endurace PRO Hybrid 10–15kW |
 | Voltronic / Axpert | King, Max, VM III |
 | Luxpower | SNA Serie |
@@ -39,125 +39,79 @@ Das System nutzt [mpp-solar](https://github.com/jblance/mpp-solar) zur WR-Kommun
 > Weitere kompatible Geräte: siehe [mpp-solar Protokoll-Liste](https://github.com/jblance/mpp-solar/tree/master/mppsolar/protocols)
 
 ### Stromzähler
+
 - **Eastron SDM630** – 3-Phasen Modbus RTU RS485 (empfohlen)
 - Andere SDM-Modelle möglich (SDM120, SDM230) mit Anpassung der Register
 
 ### Batteriesystem
+
 - **Pylontech US2000C / US3000C** – RS232 Console
 - Weitere Pylontech-Modelle mit identischem Console-Protokoll
 
 ### Logger
+
 - **Raspberry Pi** 3B+ / 4 / 5 (empfohlen: Pi 4 oder 5)
-
----
-
-## 🏗️ Architektur
-
-```
-Geräte                    Leser                  Verarbeitung        Ausgabe
-
-/dev/hidraw0  ──►  read_inverter.py  ──┐
-                                       ├──►  scheduler.py  ──►  app.py  ──►  Browser
-/dev/ttyUSB1  ──►  read_sdm630.py   ──┤         │
-                                       │         ├──►  mqtt_client.py  ──►  HomeAssistant
-/dev/ttyUSB0  ──►  read_pylontech.py──┘         │
-                                                 └──►  db.py (SQLite)
-```
-
-**Polling-Intervalle:**
-- Wechselrichter: alle 15 Sekunden
-- SDM630: alle 30 Sekunden (Bus-Kollision mit WR beachten)
-- Pylontech: alle 60 Sekunden
-- Wetterdaten: alle 30 Minuten
-
----
-
-## 📁 Projektstruktur
-
-```
-ems/
-├── dashboard/
-│   ├── app.py              # Flask Web-App (Read-Only API)
-│   ├── config.py           # Konfiguration (Ports, MQTT, Koordinaten)
-│   ├── scheduler.py        # APScheduler – Datenerfassung
-│   ├── mqtt_client.py      # MQTT Publisher + HA Auto-Discovery
-│   ├── db.py               # SQLite Datenbankzugriff
-│   ├── weather.py          # Open-Meteo Wettervorhersage
-│   └── templates/
-│       └── index.html      # Dashboard Frontend (vanilla JS)
-├── inverter/
-│   └── read_inverter.py    # WR Kommunikation via mpp-solar
-├── sdm630/
-│   └── read_sdm630.py      # Modbus RS485 + Plausibilitätsprüfung
-├── pylontech/
-│   └── read_pylontech.py   # Pylontech Console Parser
-├── ems-healthcheck.sh      # Healthcheck Script
-├── ems-healthcheck.service # Systemd Service für Healthcheck
-└── ems-healthcheck.timer   # Systemd Timer (alle 5 Minuten)
-```
 
 ---
 
 ## 🚀 Installation
 
-### Voraussetzungen
+### Option A – Docker (empfohlen)
+
+```bash
+# 1) Repository klonen
+git clone https://github.com/quompacc/fsp-hybrid-monitor.git
+cd fsp-hybrid-monitor
+
+# 2) Konfiguration anlegen
+cp .env.example .env
+nano .env   # MQTT, Standort, Ports anpassen
+
+# 3) Starten
+docker compose up -d
+```
+
+Dashboard erreichbar unter: `http://<pi-ip>:5000`
+
+> **Geräte-Ports prüfen** bevor du startest:
+> ```bash
+> ls -la /dev/ttyUSB* /dev/hidraw*
+> udevadm info /dev/ttyUSB0 | grep -E "ID_MODEL|ID_SERIAL"
+> ```
+> Ports in `.env` entsprechend anpassen.
+
+---
+
+### Option B – Manuell (ohne Docker)
+
+#### Voraussetzungen
 
 ```bash
 sudo apt update
 sudo apt install python3-pip python3-venv git curl
 ```
 
-### Repository klonen
+#### Setup
 
 ```bash
-git clone https://github.com/dein-user/pv-ems.git
-cd pv-ems
+git clone https://github.com/quompacc/fsp-hybrid-monitor.git
+cd fsp-hybrid-monitor
 
 python3 -m venv venv
 source venv/bin/activate
-pip install flask apscheduler paho-mqtt pyserial requests mpp-solar
+pip install -r requirements.txt
 ```
 
-### Konfiguration
+#### Konfiguration
+
+Alle Werte können über Umgebungsvariablen oder eine `.env` Datei gesetzt werden:
 
 ```bash
-nano dashboard/config.py
+cp .env.example .env
+nano .env
 ```
 
-```python
-# MQTT / HomeAssistant
-MQTT_HOST     = '127.0.0.1'     # oder IP deines MQTT-Brokers
-MQTT_PORT     = 1883
-MQTT_USER     = '<mqtt-user>'
-MQTT_PASSWORD = '<mqtt-password>'
-MQTT_PREFIX   = 'ems'
-
-# Standort für Wettervorhersage
-WEATHER_LAT   = 48.123          # Breitengrad
-WEATHER_LON   = 12.456          # Längengrad
-
-# Flask
-HOST  = '0.0.0.0'
-PORT  = 5000
-DEBUG = False
-```
-
-### Geräte-Ports prüfen
-
-```bash
-ls -la /dev/ttyUSB* /dev/hidraw*
-
-# Welches USB-Gerät ist was?
-udevadm info /dev/ttyUSB0 | grep -E "ID_MODEL|ID_SERIAL"
-udevadm info /dev/ttyUSB1 | grep -E "ID_MODEL|ID_SERIAL"
-```
-
-Ports in den jeweiligen Leser-Skripten anpassen:
-- `inverter/read_inverter.py` → `/dev/hidraw0`
-- `sdm630/read_sdm630.py` → z.B. `/dev/ttyUSB1`
-- `pylontech/read_pylontech.py` → z.B. `/dev/ttyUSB0`
-
-### Testen
+#### Testen
 
 ```bash
 # Jedes Gerät einzeln testen
@@ -170,9 +124,7 @@ python3 dashboard/app.py
 # Aufruf: http://raspberry-pi-ip:5000
 ```
 
----
-
-## ⚙️ Systemd Service
+#### Systemd Service
 
 ```bash
 sudo nano /etc/systemd/system/ems-dashboard.service
@@ -187,9 +139,9 @@ Wants=network-online.target
 [Service]
 User=pi
 Group=pi
-WorkingDirectory=/home/pi/ems
-Environment="PATH=/home/pi/ems/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=/home/pi/ems/venv/bin/python dashboard/app.py
+WorkingDirectory=/home/pi/fsp-hybrid-monitor
+Environment="PATH=/home/pi/fsp-hybrid-monitor/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/pi/fsp-hybrid-monitor/venv/bin/python dashboard/app.py
 Restart=always
 RestartSec=5
 
@@ -203,7 +155,7 @@ sudo systemctl enable ems-dashboard
 sudo systemctl start ems-dashboard
 ```
 
-### Healthcheck Timer
+#### Healthcheck Timer
 
 ```bash
 sudo cp ems-healthcheck.sh /usr/local/bin/
@@ -211,11 +163,10 @@ sudo chmod +x /usr/local/bin/ems-healthcheck.sh
 sudo cp ems-healthcheck.service /etc/systemd/system/
 sudo cp ems-healthcheck.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable ems-healthcheck.timer
-sudo systemctl start ems-healthcheck.timer
+sudo systemctl enable --now ems-healthcheck.timer
 ```
 
-### Hardware Watchdog (empfohlen)
+#### Hardware Watchdog (empfohlen)
 
 ```bash
 echo 'dtparam=watchdog=on' | sudo tee -a /boot/firmware/config.txt
@@ -230,8 +181,58 @@ max-load-1 = 24
 ```
 
 ```bash
-sudo systemctl enable watchdog
-sudo systemctl start watchdog
+sudo systemctl enable --now watchdog
+```
+
+---
+
+## 🏗️ Architektur
+
+```
+Geräte                    Leser                  Verarbeitung        Ausgabe
+
+/dev/hidraw0  ──►  read_inverter.py  ──┐
+                                       ├──►  scheduler.py  ──►  app.py  ──►  Browser
+/dev/ttyUSB0  ──►  read_sdm630.py   ──┤         │
+                                       │         ├──►  mqtt_client.py  ──►  HomeAssistant
+/dev/ttyUSB1  ──►  read_pylontech.py──┘         │
+                                                 └──►  db.py (SQLite)
+```
+
+**Polling-Intervalle:**
+- Wechselrichter: alle 15 Sekunden
+- SDM630: alle 30 Sekunden (Bus-Kollision mit WR beachten)
+- Pylontech: alle 60 Sekunden
+- Wetterdaten: alle 30 Minuten
+
+---
+
+## 📁 Projektstruktur
+
+```
+fsp-hybrid-monitor/
+├── dashboard/
+│   ├── app.py              # Flask Web-App (Read-Only API)
+│   ├── config.py           # Konfiguration via ENV-Variablen
+│   ├── scheduler.py        # APScheduler – Datenerfassung
+│   ├── mqtt_client.py      # MQTT Publisher + HA Auto-Discovery
+│   ├── db.py               # SQLite Datenbankzugriff
+│   ├── weather.py          # Open-Meteo Wettervorhersage
+│   └── templates/
+│       └── index.html      # Dashboard Frontend (vanilla JS)
+├── inverter/
+│   └── read_inverter.py    # WR Kommunikation via mpp-solar
+├── sdm630/
+│   └── read_sdm630.py      # Modbus RS485 + Plausibilitätsprüfung
+├── pylontech/
+│   └── read_pylontech.py   # Pylontech Console Parser
+├── data/                   # SQLite Datenbank (auto-erstellt)
+├── docs/                   # Screenshots
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── requirements.txt
+└── start_ems.sh
 ```
 
 ---
@@ -241,7 +242,7 @@ sudo systemctl start watchdog
 Nach dem Start einmal **"HA Discovery senden"** im Dashboard klicken – alle Sensoren erscheinen automatisch in HomeAssistant.
 
 | Sensor | Topic | Einheit |
-|--------|-------|---------|
+|---|---|---|
 | Akku SOC | `ems/pylontech/avg_soc` | % |
 | Akku Spannung | `ems/pylontech/avg_voltage` | V |
 | Akku Strom | `ems/pylontech/total_current` | A |
@@ -273,7 +274,7 @@ Nach dem Start einmal **"HA Discovery senden"** im Dashboard klicken – alle Se
 ## 📦 Abhängigkeiten
 
 | Paket | Verwendung |
-|-------|------------|
+|---|---|
 | [mpp-solar](https://github.com/jblance/mpp-solar) | WR Kommunikation (PI17INFINI Protokoll) |
 | [Flask](https://flask.palletsprojects.com/) | Web Framework |
 | [APScheduler](https://apscheduler.readthedocs.io/) | Task Scheduling |
@@ -285,4 +286,4 @@ Nach dem Start einmal **"HA Discovery senden"** im Dashboard klicken – alle Se
 
 ## 📄 Lizenz
 
-MIT License – frei verwendbar, anpassbar und weitergabe erlaubt.
+MIT License – frei verwendbar, anpassbar und weitergebbar.
