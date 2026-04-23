@@ -4,8 +4,8 @@ Ein schlankes **Energie-Management-System** für Photovoltaik-Anlagen mit Hybrid
 
 > **Entstanden aus der Praxis** – entwickelt für eine 15kW PV-Anlage mit 14.4 kWh Batteriespeicher.
 
-![Dashboard Screenshot](docs/docs/EMS FSP 15KW Hybrid System Übersicht.png)
-![Dashboard Screenshot](docs/docs/EMS FSP 15KW Hybrid System Verlauf.png)
+![Dashboard Screenshot](docs/EMS FSP 15KW Hybrid System Übersicht.png)
+![Dashboard Screenshot](docs/EMS FSP 15KW Hybrid System Verlauf.png)
 
 ---
 
