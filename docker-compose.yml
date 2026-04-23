@@ -1,0 +1,24 @@
+services:
+  ems:
+    build: .
+    container_name: fsp-hybrid-monitor
+    restart: unless-stopped
+    privileged: true          # benötigt für /dev/hidraw0, /dev/ttyUSB*
+    devices:
+      - /dev/hidraw0:/dev/hidraw0       # Wechselrichter (USB HID)
+      - /dev/ttyUSB0:/dev/ttyUSB0       # SDM630 RS485
+      - /dev/ttyUSB1:/dev/ttyUSB1       # Pylontech RS232
+    volumes:
+      - ems-data:/app/data              # SQLite Datenbank persistent
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-5000}:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+
+volumes:
+  ems-data:
